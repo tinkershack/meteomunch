@@ -1,0 +1,20 @@
+name: meteo-munch
+include:
+  - data_store.yml
+services:
+  web:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build-release-stage
+      ulimits:
+        nproc: 65535
+        nofile:
+          soft: 65535
+          hard: 65355
+    depends_on:
+      dlm-redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy

@@ -1,0 +1,37 @@
+services:
+  # Distributed Lock Manager 
+  dlm-redis:
+    image: "redis:7.4"
+    restart: always
+    volumes:
+      - dlm-redis-data:/data
+    ports:
+      - "6379:6379"
+      # RedisInsight
+      # - "8001:8001"
+    healthcheck:
+      # TODO: test for writes to get through, not just ping-pong drill?
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  mongo:
+    image: "mongo:8.0"
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      # TODO: test for writes to get through, not just ping-pong drill?
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  dlm-redis-data:
+  mongo-data:
