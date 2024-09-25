@@ -11,8 +11,8 @@ services:
       ulimits:
         nproc: 65535
         nofile:
-          soft: 65535
-          hard: 65355
+          soft: 40530
+          hard: 55355
     depends_on:
       dlm-redis:
         condition: service_healthy
