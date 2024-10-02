@@ -10,14 +10,22 @@ import (
 )
 
 type config struct {
-	Munch         munch     // Paramters of munch app, excluding external dependencies
-	DocumentStore string    // Name of the prefered DS
-	Mongo         dataStore // Gets picked if DocumentStore is "mongo"
-	DLMRedis      dataStore
+	Munch          munch     // Paramters of munch app, excluding external dependencies
+	DocumentStore  string    // Name of the prefered DS
+	Mongo          dataStore // Gets picked if DocumentStore is "mongo"
+	DLMRedis       dataStore
+	MeteoProviders []meteoProvider
+}
+
+// TODO: Validate URL sting
+type meteoProvider struct {
+	Provider string // Name of the provider
+	APIKey   string
+	URI      string // URL of the provider's API, fully qualified with protocol
 }
 
 type munch struct {
-	Serve munchServer
+	Server munchServer
 }
 
 type munchServer struct {
