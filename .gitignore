@@ -28,7 +28,6 @@ _gitignore/
 
 # app config
 .env
-config
 *config.yml
 *config.yaml
 *munch.yml
