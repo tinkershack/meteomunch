@@ -7,7 +7,7 @@ import (
 	"github.com/tinkershack/meteomunch/server"
 )
 
-// serverCmd represents the server command
+// serverCmd operates the server command
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "server serves meteo data for grpc clients",
