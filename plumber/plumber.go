@@ -8,11 +8,8 @@ type Coordinates struct {
 	Longitude float64 // in degrees
 }
 
-// Elevation represents the elevation data
-type Elevation struct {
-	Value    int     `json:"value"`    // Elevation value in meters
-	Accuracy float64 `json:"accuracy"` // Accuracy of the elevation value in meters
-}
+// Models like Copernicus GLO-90 provide elevation with an accuracy of <4 meters. So, it may not be necessary to capture accuracy separately.
+type Elevation uint // in meters
 
 // Location represents a geographical location with various attributes for geocoding
 type Location struct {
