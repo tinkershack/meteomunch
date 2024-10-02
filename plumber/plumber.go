@@ -30,7 +30,6 @@ type Location struct {
 type BaseData struct {
 	Latitude             float64     `json:"latitude"`
 	Longitude            float64     `json:"longitude"`
-	GenerationTimeMS     float64     `json:"generationtime_ms"`
 	UTCOffsetSeconds     int         `json:"utc_offset_seconds"`
 	Timezone             string      `json:"timezone"`
 	TimezoneAbbreviation string      `json:"timezone_abbreviation"`
@@ -45,7 +44,6 @@ type BaseData struct {
 var SampleBaseData = BaseData{
     Latitude:             11.25, // Doesn't matter even if it's provided as 11.2855, most weather models normalize for 0.25 degree grid resolution
     Longitude:            77, // 76.9661
-    GenerationTimeMS:     212.799072265625,
     UTCOffsetSeconds:     0,
     Timezone:             "GMT",
     TimezoneAbbreviation: "GMT",
@@ -58,29 +56,29 @@ var SampleBaseData = BaseData{
 
 // CurrentData holds current meteo data for the time period that was requested
 type CurrentData struct {
-	Time                int64   `json:"time"`
-	Interval            int     `json:"interval"`
-	Temperature2M       float64 `json:"temperature_2m"`
-	RelativeHumidity2M  int     `json:"relative_humidity_2m"`
-	ApparentTemperature float64 `json:"apparent_temperature"`
-	IsDay               int     `json:"is_day"`
-	Precipitation       float64 `json:"precipitation"`
-	Rain                float64 `json:"rain"`
-	Showers             float64 `json:"showers"`
-	Snowfall            float64 `json:"snowfall"`
-	WeatherCode         int     `json:"weather_code"`
-	CloudCover          int     `json:"cloud_cover"`
-	PressureMSL         float64 `json:"pressure_msl"`
-	SurfacePressure     float64 `json:"surface_pressure"`
-	WindSpeed10M        float64 `json:"wind_speed_10m"`
-	WindDirection10M    int     `json:"wind_direction_10m"`
-	WindGusts10M        float64 `json:"wind_gusts_10m"`
+	Time                int64   `json:"time"`                 // Unix timestamp
+	Interval            int     `json:"interval"`             // Interval in seconds for the data
+	Temperature2M       float64 `json:"temperature_2m"`       // Temperature at 2 meters above ground in °C
+	RelativeHumidity2M  int     `json:"relative_humidity_2m"` // Relative humidity at 2 meters above ground in %
+	ApparentTemperature float64 `json:"apparent_temperature"` // Apparent temperature in °C
+	IsDay               int     `json:"is_day"`               // 1 if it is day, 0 if it is night
+	Precipitation       float64 `json:"precipitation"`        // Precipitation in mm
+	Rain                float64 `json:"rain"`                 // Rain in mm
+	Showers             float64 `json:"showers"`              // Showers in mm
+	Snowfall            float64 `json:"snowfall"`             // Snowfall in cm
+	WeatherCode         int     `json:"weather_code"`         // Weather code according to WMO
+	CloudCover          int     `json:"cloud_cover"`          // Cloud cover in %
+	PressureMSL         float64 `json:"pressure_msl"`         // Mean sea level pressure in hPa
+	SurfacePressure     float64 `json:"surface_pressure"`     // Surface pressure in hPa
+	WindSpeed10M        float64 `json:"wind_speed_10m"`       // Wind speed at 10 meters above ground in km/h
+	WindDirection10M    int     `json:"wind_direction_10m"`   // Wind direction at 10 meters above ground in degrees
+	WindGusts10M        float64 `json:"wind_gusts_10m"`       // Wind gusts at 10 meters above ground in km/h
 }
 
 /*
 // SampleCurrentData provides sample values for CurrentData to sreve as a reference
 var SampleCurrentData = CurrentData{
-    Time:                1633036800, // Unix timestamp for the sample time
+    Time:                1633036800, // Unix timestamp
     Interval:            3600,       // Interval in seconds
     Temperature2M:       15.3,       // Temperature at 2 meters above ground in °C
     RelativeHumidity2M:  80,         // Relative humidity at 2 meters above ground in %
@@ -96,32 +94,6 @@ var SampleCurrentData = CurrentData{
     SurfacePressure:     1013.0,     // Surface pressure in hPa
     WindSpeed10M:        5.0,        // Wind speed at 10 meters above ground in km/h
     WindDirection10M:    180,        // Wind direction at 10
-}
-*/
-
-/*
-// SampleDailyData provides sample values for DailyData
-var SampleDailyData = DailyData{
-    Time:                        []int64{1633036800}, // Unix timestamp for the sample time
-    WeatherCode:                 []int{1},            // Weather code according to WMO
-    Temperature2MMax:            []float64{20.0},     // Maximum temperature at 2 meters above ground in °C
-    Temperature2MMin:            []float64{10.0},     // Minimum temperature at 2 meters above ground in °C
-    ApparentTemperatureMax:      []float64{19.5},     // Maximum apparent temperature in °C
-    ApparentTemperatureMin:      []float64{9.5},      // Minimum apparent temperature in °C
-    Sunrise:                     []int64{1633065600}, // Unix timestamp for sunrise
-    Sunset:                      []int64{1633108800}, // Unix timestamp for sunset
-    DaylightDuration:            []float64{43200},    // Daylight duration in seconds
-    SunshineDuration:            []float64{36000},    // Sunshine duration in seconds
-    UVIndexMax:                  []float64{5.0},      // Maximum UV index
-    UVIndexClearSkyMax:          []float64{6.0},      // Maximum UV index under clear sky
-    PrecipitationSum:            []float64{0.0},      // Total precipitation in mm
-    PrecipitationHours:          []float64{0.0},      // Hours of precipitation
-    PrecipitationProbabilityMax: []int{0},            // Maximum probability of precipitation in %
-    WindSpeed10MMax:             []float64{10.0},     // Maximum wind speed at 10 meters above ground in km/h
-    WindGusts10MMax:             []float64{15.0},     // Maximum wind gusts at 10 meters above ground in km/h
-    WindDirection10MDominant:    []int{180},          // Dominant wind direction at 10 meters above ground in degrees
-    ShortwaveRadiationSum:       []float64{20.0},     // Sum of shortwave radiation in MJ/m²
-    ET0FAOEvapotranspiration:    []float64{3.0},      // Evapotranspiration in mm
 }
 */
 
@@ -237,27 +209,53 @@ type HourlyData struct {
 
 // DailyData holds forecasted meteo data that provides a higher level trend for the day
 type DailyData struct {
-	Time                        []int64   `json:"time"` // There maybe just one entry in it, but it's declared as a slice to keep the structure consistent with previosyly defined data structures
-	WeatherCode                 []int     `json:"weather_code"`
-	Temperature2MMax            []float64 `json:"temperature_2m_max"`
-	Temperature2MMin            []float64 `json:"temperature_2m_min"`
-	ApparentTemperatureMax      []float64 `json:"apparent_temperature_max"`
-	ApparentTemperatureMin      []float64 `json:"apparent_temperature_min"`
-	Sunrise                     []int64   `json:"sunrise"`
-	Sunset                      []int64   `json:"sunset"`
-	DaylightDuration            []float64 `json:"daylight_duration"`
-	SunshineDuration            []float64 `json:"sunshine_duration"`
-	UVIndexMax                  []float64 `json:"uv_index_max"`
-	UVIndexClearSkyMax          []float64 `json:"uv_index_clear_sky_max"`
-	PrecipitationSum            []float64 `json:"precipitation_sum"`
-	PrecipitationHours          []float64 `json:"precipitation_hours"`
-	PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"`
-	WindSpeed10MMax             []float64 `json:"wind_speed_10m_max"`
-	WindGusts10MMax             []float64 `json:"wind_gusts_10m_max"`
-	WindDirection10MDominant    []int     `json:"wind_direction_10m_dominant"`
-	ShortwaveRadiationSum       []float64 `json:"shortwave_radiation_sum"`
-	ET0FAOEvapotranspiration    []float64 `json:"et0_fao_evapotranspiration"`
+	Time                        []int64   `json:"time"`                          // Unix timestamps
+	WeatherCode                 []int     `json:"weather_code"`                  // Weather codes according to WMO
+	Temperature2MMax            []float64 `json:"temperature_2m_max"`            // Maximum temperature at 2 meters above ground in °C
+	Temperature2MMin            []float64 `json:"temperature_2m_min"`            // Minimum temperature at 2 meters above ground in °C
+	ApparentTemperatureMax      []float64 `json:"apparent_temperature_max"`      // Maximum apparent temperature in °C
+	ApparentTemperatureMin      []float64 `json:"apparent_temperature_min"`      // Minimum apparent temperature in °C
+	Sunrise                     []int64   `json:"sunrise"`                       // Unix timestamps for sunrise
+	Sunset                      []int64   `json:"sunset"`                        // Unix timestamps for sunset
+	DaylightDuration            []float64 `json:"daylight_duration"`             // Duration of daylight in seconds
+	SunshineDuration            []float64 `json:"sunshine_duration"`             // Duration of sunshine in seconds
+	UVIndexMax                  []float64 `json:"uv_index_max"`                  // Maximum UV index
+	UVIndexClearSkyMax          []float64 `json:"uv_index_clear_sky_max"`        // Maximum UV index under clear sky
+	PrecipitationSum            []float64 `json:"precipitation_sum"`             // Total precipitation in mm
+	PrecipitationHours          []float64 `json:"precipitation_hours"`           // Hours of precipitation
+	PrecipitationProbabilityMax []int     `json:"precipitation_probability_max"` // Maximum probability of precipitation in %
+	WindSpeed10MMax             []float64 `json:"wind_speed_10m_max"`            // Maximum wind speed at 10 meters above ground in km/h
+	WindGusts10MMax             []float64 `json:"wind_gusts_10m_max"`            // Maximum wind gusts at 10 meters above ground in km/h
+	WindDirection10MDominant    []int     `json:"wind_direction_10m_dominant"`   // Dominant wind direction at 10 meters above ground in degrees
+	ShortwaveRadiationSum       []float64 `json:"shortwave_radiation_sum"`       // Sum of shortwave radiation in MJ/m²
+	ET0FAOEvapotranspiration    []float64 `json:"et0_fao_evapotranspiration"`    // Evapotranspiration in mm
 }
+
+/*
+// SampleDailyData provides sample values for DailyData
+var SampleDailyData = DailyData{
+    Time:                        []int64{1633036800}, // Unix timestamp
+    WeatherCode:                 []int{1},            // Weather code according to WMO
+    Temperature2MMax:            []float64{20.0},     // Maximum temperature at 2 meters above ground in °C
+    Temperature2MMin:            []float64{10.0},     // Minimum temperature at 2 meters above ground in °C
+    ApparentTemperatureMax:      []float64{19.5},     // Maximum apparent temperature in °C
+    ApparentTemperatureMin:      []float64{9.5},      // Minimum apparent temperature in °C
+    Sunrise:                     []int64{1633065600}, // Unix timestamp for sunrise
+    Sunset:                      []int64{1633108800}, // Unix timestamp for sunset
+    DaylightDuration:            []float64{43200},    // Daylight duration in seconds
+    SunshineDuration:            []float64{36000},    // Sunshine duration in seconds
+    UVIndexMax:                  []float64{5.0},      // Maximum UV index
+    UVIndexClearSkyMax:          []float64{6.0},      // Maximum UV index under clear sky
+    PrecipitationSum:            []float64{0.0},      // Total precipitation in mm
+    PrecipitationHours:          []float64{0.0},      // Hours of precipitation
+    PrecipitationProbabilityMax: []int{0},            // Maximum probability of precipitation in %
+    WindSpeed10MMax:             []float64{10.0},     // Maximum wind speed at 10 meters above ground in km/h
+    WindGusts10MMax:             []float64{15.0},     // Maximum wind gusts at 10 meters above ground in km/h
+    WindDirection10MDominant:    []int{180},          // Dominant wind direction at 10 meters above ground in degrees
+    ShortwaveRadiationSum:       []float64{20.0},     // Sum of shortwave radiation in MJ/m²
+    ET0FAOEvapotranspiration:    []float64{3.0},      // Evapotranspiration in mm
+}
+*/
 
 // CommonUnits is a map of common units used in meteo data
 // Providers may have different preferences for units, this map is used to standardize the units
