@@ -49,6 +49,7 @@ type HTTPClient interface {
 	SetDefaults() HTTPClient
 	SetDebug() HTTPClient
 	SetBaseURL(url string) HTTPClient
+	NewRequest()
 }
 
 // Response wraps the Resty response
@@ -75,7 +76,8 @@ func (r *Response) Body() []byte {
 //
 // RestyClient is a wrapper around Resty client and provides the necessary methods.
 type RestyClient struct {
-	restyClient *resty.Client
+	restyClient  *resty.Client
+	restyRequest *resty.Request
 }
 
 // NewClient creates a new RestyClient
@@ -86,7 +88,7 @@ func NewClient() *RestyClient {
 }
 
 func (c *RestyClient) Get(url string) (*Response, error) {
-	resp, err := c.restyClient.R().Get(url)
+	resp, err := c.restyRequest.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make GET request: %w", err)
 	}
@@ -99,27 +101,27 @@ func (c *RestyClient) Get(url string) (*Response, error) {
 }
 
 func (c *RestyClient) SetQueryParams(params map[string]string) HTTPClient {
-	c.restyClient.R().SetQueryParams(params)
+	c.restyRequest.SetQueryParams(params)
 	return c
 }
 
 func (c *RestyClient) AcceptJSON() HTTPClient {
-	c.restyClient.R().SetHeader("Accept", "application/json")
+	c.restyRequest.SetHeader("Accept", "application/json")
 	return c
 }
 
 func (c *RestyClient) SetQueryString(query string) HTTPClient {
-	c.restyClient.R().SetQueryString(query)
+	c.restyRequest.SetQueryString(query)
 	return c
 }
 
 func (c *RestyClient) SetAuthToken(token string) HTTPClient {
-	c.restyClient.R().SetAuthToken(token)
+	c.restyRequest.SetAuthToken(token)
 	return c
 }
 
 func (c *RestyClient) SetOutput(filename string) HTTPClient {
-	c.restyClient.R().SetOutput(filename)
+	c.restyRequest.SetOutput(filename)
 	return c
 }
 
@@ -129,7 +131,7 @@ func (c *RestyClient) SetOutputDirectory(dir string) HTTPClient {
 }
 
 func (c *RestyClient) SetPathParams(params map[string]string) HTTPClient {
-	c.restyClient.R().SetPathParams(params)
+	c.restyRequest.SetPathParams(params)
 	return c
 }
 
@@ -153,4 +155,8 @@ func (c *RestyClient) SetDebug() HTTPClient {
 func (c *RestyClient) SetBaseURL(url string) HTTPClient {
 	c.restyClient.SetBaseURL(url)
 	return c
+}
+
+func (c *RestyClient) NewRequest() {
+	c.restyRequest = c.restyClient.R()
 }
