@@ -49,7 +49,7 @@ type HTTPClient interface {
 	SetDefaults() HTTPClient
 	SetDebug() HTTPClient
 	SetBaseURL(url string) HTTPClient
-	NewRequest()
+	NewRequest() HTTPClient
 }
 
 // Response wraps the Resty response
@@ -143,7 +143,8 @@ func (c *RestyClient) EnableTrace() HTTPClient {
 func (c *RestyClient) SetDefaults() HTTPClient {
 	c.restyClient.SetRetryCount(3)
 	c.restyClient.SetRetryWaitTime(1 * time.Second)
-	c.restyClient.SetTimeout(1 * time.Second)
+	c.restyClient.SetTimeout(1500 * time.Millisecond)
+	c.restyClient.SetHeader("Content-Type", "application/json")
 	return c
 }
 
@@ -157,6 +158,7 @@ func (c *RestyClient) SetBaseURL(url string) HTTPClient {
 	return c
 }
 
-func (c *RestyClient) NewRequest() {
+func (c *RestyClient) NewRequest() HTTPClient {
 	c.restyRequest = c.restyClient.R()
+	return c
 }
