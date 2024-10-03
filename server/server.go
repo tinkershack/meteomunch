@@ -25,6 +25,32 @@ func Serve(ctx context.Context, args []string) {
 	}
 	logger.Info("Config parsed successfully", "config", cfg)
 
+	var client rest.HTTPClient = rest.NewClient().
+		SetAuthToken("dummy-auth-token").
+		// FIX: SetQueryParams() isn't getting picked up
+		SetQueryParams(map[string]string{
+			"lat":           "47.558",
+			"lon":           "7.587",
+			"asl":           "279",
+			"tz":            "Europe/Zurich",
+			"name":          "Test",
+			"windspeed":     "kmh",
+			"format":        "json",
+			"history_days":  "1",
+			"forecast_days": "0",
+			"apikey":        cfg.MeteoProviders[0].APIKey,
+		}).
+		AcceptJSON().
+		EnableTrace().
+		SetDefaults().
+		SetBaseURL(cfg.MeteoProviders[0].URI).
+		SetDebug()
+		// FIX: SetQueryString isn't getting picked up
+		// SetQueryString("lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + cfg.MeteoProviders[0].APIKey)
+
+	qs := "lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + cfg.MeteoProviders[0].APIKey
+	uri := fmt.Sprintf("packages/air-1h_air-day?%s", qs)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -36,31 +62,6 @@ func Serve(ctx context.Context, args []string) {
 		fmt.Fprintln(w, "OK")
 		logger.Info(r.URL.String())
 
-		var client rest.HTTPClient = rest.NewClient().
-			SetAuthToken("dummy-auth-token").
-			// FIX: SetQueryParams() isn't getting picked up
-			SetQueryParams(map[string]string{
-				"lat":           "47.558",
-				"lon":           "7.587",
-				"asl":           "279",
-				"tz":            "Europe/Zurich",
-				"name":          "Test",
-				"windspeed":     "kmh",
-				"format":        "json",
-				"history_days":  "1",
-				"forecast_days": "0",
-				"apikey":        cfg.MeteoProviders[0].APIKey,
-			}).
-			AcceptJSON().
-			EnableTrace().
-			SetDefaults().
-			SetBaseURL(cfg.MeteoProviders[0].URI).
-			SetDebug()
-			// FIX: SetQueryString isn't getting picked up
-			// SetQueryString("lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + cfg.MeteoProviders[0].APIKey)
-
-		qs := "lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + cfg.MeteoProviders[0].APIKey
-		uri := fmt.Sprintf("packages/air-1h_air-day?%s", qs)
 		resp, err := client.Get(uri)
 		if err != nil {
 			logger.Error(e.FAIL, "err", err, "description", "HTTP request failed!")

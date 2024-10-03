@@ -141,6 +141,7 @@ func (c *RestyClient) EnableTrace() HTTPClient {
 func (c *RestyClient) SetDefaults() HTTPClient {
 	c.restyClient.SetRetryCount(3)
 	c.restyClient.SetRetryWaitTime(1 * time.Second)
+	c.restyClient.SetTimeout(1 * time.Second)
 	return c
 }
 
