@@ -8,6 +8,15 @@ type Coordinates struct {
 	Longitude float64 // in degrees
 }
 
+// NewCoordinates creates a new Coordinates struct with the given latitude and longitude.
+// If no parameters are provided, it returns an empty Coordinates struct.
+func NewCoordinates(latitude float64, longitude float64) *Coordinates {
+	return &Coordinates{
+		Latitude:  latitude,
+		Longitude: longitude,
+	}
+}
+
 // Models like Copernicus GLO-90 provide elevation with an accuracy of <4 meters. So, it may not be necessary to capture accuracy separately.
 type Elevation uint // in meters
 
@@ -33,7 +42,7 @@ type BaseData struct {
 	UTCOffsetSeconds     int         `json:"utc_offset_seconds"`
 	Timezone             string      `json:"timezone"`
 	TimezoneAbbreviation string      `json:"timezone_abbreviation"`
-	Elevation            int         `json:"elevation"`
+	Elevation            float64     `json:"elevation"`
 	Current              CurrentData `json:"current"`
 	Hourly               HourlyData  `json:"hourly"`
 	Daily                DailyData   `json:"daily"`
@@ -113,7 +122,7 @@ type HourlyData struct {
 	CloudCoverLow                    []int     `json:"cloud_cover_low"`
 	CloudCoverMid                    []int     `json:"cloud_cover_mid"`
 	CloudCoverHigh                   []int     `json:"cloud_cover_high"`
-	Visibility                       []int     `json:"visibility"`
+	Visibility                       []float64 `json:"visibility"`
 	Evapotranspiration               []float64 `json:"evapotranspiration"`
 	ET0FAOEvapotranspiration         []float64 `json:"et0_fao_evapotranspiration"`
 	VapourPressureDeficit            []float64 `json:"vapour_pressure_deficit"`
