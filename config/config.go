@@ -5,7 +5,8 @@ package config
 
 import (
 	"log/slog" // avoiding logger package to prevent cyclic imports
-
+	"os"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	e "github.com/tinkershack/meteomunch/errors"
 )
@@ -38,7 +39,7 @@ func (c *config) GetMeteoProviders() []MeteoProvider {
 	return c.MeteoProviders
 }
 
-// TODO: Validate URL sting
+// TODO: Validate URL string
 type MeteoProvider struct {
 	Name    string
 	APIKey  string
@@ -63,21 +64,117 @@ type DataStore struct {
 	DBNumber int
 }
 
+var defaultConfig = &config{
+	Munch: Munch{
+		Server: MunchServer{
+			Hostname: "localhost",
+			Port:     "50050",
+		},
+		LogLevel: "Logger",
+	},
+	DocumentStore: "mongo",
+	Mongo: DataStore{
+		Name:     "mongo",
+		URI:      "mongodb://localhost:27017",
+		DBName:   "meteomunch",
+		DBNumber: 0,
+	},
+	DLMRedis: DataStore{
+		Name:     "redis",
+		URI:      "redis://localhost:6379",
+		DBNumber: 1,
+	},
+	MeteoProviders: []MeteoProvider{
+		{
+			Name:    "open-meteo",
+			APIKey:  "",
+			BaseURI: "https://api.open-meteo.com/",
+		},
+	},
+}
+
 var legal = &struct {
 	documentStore []string
 }{
 	documentStore: []string{"mongo"},
 }
 
-// TODO: This can be more perfomant by loading it just once and pass a copy for each call
+// New creates a new config object
 func New() (*config, error) {
-	// log := logger.NewTag("config")
 	conf := new(config)
 
-	if err := viper.Unmarshal(conf); err != nil {
-		slog.Error(e.FAIL, "err", err, "description", "Couldn't parse config")
-		return nil, err
+	pwd, err := os.Getwd()
+	cobra.CheckErr(err)
+	viper.AddConfigPath(pwd)
+	viper.AddConfigPath(".")
+	viper.SetConfigType("yml")
+	viper.SetConfigName("munch")
+
+	if err := viper.ReadInConfig(); err != nil {
+		slog.Warn("Config file not found, using default config", "error", err)
+		return defaultConfig, nil 
 	}
 
+	if err := viper.Unmarshal(conf); err != nil {
+		slog.Error(e.FAIL, "err", err, "description", "Couldn't parse config, using default config")
+		return defaultConfig, nil 
+	}
+
+	setDefaultValues(conf)
+
+	// Check for critical values and panic if missing
+	validateCriticalFields(conf)
+
 	return conf, nil
+}
+
+// setDefaultValues sets default values for non-critical parameters in the configuration
+func setDefaultValues(conf *config) {
+	//default values if not present
+	if conf.Munch.Server.Hostname == "" {
+		conf.Munch.Server.Hostname = defaultConfig.Munch.Server.Hostname
+		slog.Warn("Hostname missing, using default", "value", defaultConfig.Munch.Server.Hostname)
+	}
+
+	if conf.Munch.Server.Port == "" {
+		conf.Munch.Server.Port = defaultConfig.Munch.Server.Port
+		slog.Warn("Port missing, using default", "value", defaultConfig.Munch.Server.Port)
+	}
+
+	if conf.Munch.LogLevel == "" {
+		conf.Munch.LogLevel = defaultConfig.Munch.LogLevel
+		slog.Warn("LogLevel missing, using default", "value", defaultConfig.Munch.LogLevel)
+	}
+
+	if conf.DocumentStore == "" {
+		conf.DocumentStore = defaultConfig.DocumentStore
+		slog.Warn("DocumentStore missing, using default", "value", defaultConfig.DocumentStore)
+	}
+
+	//default values for Mongo configuration if missing
+	if conf.Mongo.URI == "" {
+		conf.Mongo.URI = defaultConfig.Mongo.URI
+		slog.Warn("Mongo URI missing, using default", "value", defaultConfig.Mongo.URI)
+	}
+
+	if conf.Mongo.DBName == "" {
+		conf.Mongo.DBName = defaultConfig.Mongo.DBName
+		slog.Warn("Mongo DBName missing, using default", "value", defaultConfig.Mongo.DBName)
+	}
+
+	// Check for non-critical MeteoProviders and set defaults
+	if len(conf.MeteoProviders) == 0 {
+		slog.Warn("No MeteoProviders configured, using default config")
+		conf.MeteoProviders = defaultConfig.MeteoProviders
+	}
+}
+
+// validateCriticalFields checks for critical parameters in the configuration
+func validateCriticalFields(conf *config) {
+	for _, provider := range conf.MeteoProviders {
+		if provider.Name != "open-meteo" && provider.APIKey == "" {
+			slog.Error(e.FAIL, "error", "Critical config value missing: APIKey for MeteoProvider", "provider", provider.Name)
+			panic("Critical config value is missing: API key for the provider")
+		}
+	}
 }
