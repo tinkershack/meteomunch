@@ -70,7 +70,7 @@ var defaultConfig = &config{
 			Hostname: "localhost",
 			Port:     "50050",
 		},
-		LogLevel: "Logger",
+		LogLevel: "info",
 	},
 	DocumentStore: "mongo",
 	Mongo: DataStore{
@@ -88,6 +88,7 @@ var defaultConfig = &config{
 		{
 			Name:    "open-meteo",
 			APIKey:  "",
+			APIPath: "v1/forecast",
 			BaseURI: "https://api.open-meteo.com/",
 		},
 	},
@@ -162,6 +163,23 @@ func setDefaultValues(conf *config) {
 		slog.Warn("Mongo DBName missing, using default", "value", defaultConfig.Mongo.DBName)
 	}
 
+	if(conf.MeteoProviders[0].Name==""){
+		conf.MeteoProviders[0].Name=defaultConfig.MeteoProviders[0].Name
+	}
+	if(conf.MeteoProviders[0].APIPath==""){
+		if(conf.MeteoProviders[0].Name=="open-meteo"){
+			conf.MeteoProviders[0].APIPath=defaultConfig.MeteoProviders[0].APIPath
+		}else { 
+			validateCriticalFields(conf);
+		}
+	}
+	if(conf.MeteoProviders[0].BaseURI==""){
+		if(conf.MeteoProviders[0].Name=="open-meteo"){
+			conf.MeteoProviders[0].BaseURI=defaultConfig.MeteoProviders[0].BaseURI
+		}else{
+			validateCriticalFields(conf);
+		}
+	}
 	// Check for non-critical MeteoProviders and set defaults
 	if len(conf.MeteoProviders) == 0 {
 		slog.Warn("No MeteoProviders configured, using default config")
@@ -175,6 +193,14 @@ func validateCriticalFields(conf *config) {
 		if provider.Name != "open-meteo" && provider.APIKey == "" {
 			slog.Error(e.FAIL, "error", "Critical config value missing: APIKey for MeteoProvider", "provider", provider.Name)
 			panic("Critical config value is missing: API key for the provider")
+		}
+		if(provider.Name!="open-meteo" && provider.APIPath==""){
+			slog.Error(e.FAIL,"error","Critical config value missing : API path for the meteoprovider","provider",provider.Name)
+			panic("Critical config value is missing: APi path for the provider")
+		}
+		if(provider.Name!="open-meteo" && provider.BaseURI==""){
+			slog.Error(e.FAIL,"error","Critical config vlaue is missing: BaseURI for the meteoprovider","provider",provider.Name)
+			panic("Critical config value is missing : BaseURI for the provider")
 		}
 	}
 }
