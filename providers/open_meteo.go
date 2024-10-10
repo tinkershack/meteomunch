@@ -45,7 +45,6 @@ func NewOpenMeteoProvider() (*OpenMeteoProvider, error) {
 		client.SetDebug()
 		client.EnableTrace()
 	}
-	client.NewRequest()
 
 	return &OpenMeteoProvider{
 		client: client,
@@ -55,6 +54,7 @@ func NewOpenMeteoProvider() (*OpenMeteoProvider, error) {
 
 // FetchData fetches API data from open-meteo provider for the given query parameters map
 func (p *OpenMeteoProvider) FetchData(qp map[string]string) (*plumber.BaseData, error) {
+	p.client.NewRequest()
 	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
