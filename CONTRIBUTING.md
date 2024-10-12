@@ -28,8 +28,6 @@ We welcome code patches, but to ensure smooth coordination, please discuss any s
 
 Whether you have a specific contribution in mind or are looking for ideas, the issue tracker is the first place to go. Issues are categorized to manage workflow.
 
-Most repositories use the main issue tracker. However, some manage their issues separately, so check the correct tracker for the repository you want to contribute to.
-
 Common workflow labels:
 
 - **NeedsInvestigation**: The issue requires analysis to understand the root cause.
@@ -40,7 +38,7 @@ Common workflow labels:
 
 Except for trivial changes, all contributions should be linked to an existing issue. Open one and discuss your plans. This process validates the design, prevents duplication, ensures alignment with project goals, and checks the design before code is written. __The code review tool is not for high-level discussions.__
 
-## The seven rules of a great Git commit message
+## [The seven rules of a great Git commit message](https://cbea.ms/git-commit/)
 
 1. Separate subject from body with a blank line
 2. Limit the subject line to 50 characters
