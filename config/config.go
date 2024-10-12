@@ -13,7 +13,6 @@ import (
 
 type config struct {
 	Munch          Munch     // Parameters of munch app, excluding external dependencies
-	DocumentStore  string    // Name of the preferred DS
 	Mongo          DataStore // Gets picked if DocumentStore is "mongo"
 	DLMRedis       DataStore
 	MeteoProviders []MeteoProvider
@@ -21,10 +20,6 @@ type config struct {
 
 func (c *config) GetMunch() Munch {
 	return c.Munch
-}
-
-func (c *config) GetDocumentStore() string {
-	return c.DocumentStore
 }
 
 func (c *config) GetMongo() DataStore {
@@ -72,7 +67,6 @@ var defaultConfig = &config{
 		},
 		LogLevel: "info",
 	},
-	DocumentStore: "mongo",
 	Mongo: DataStore{
 		Name:     "mongo",
 		URI:      "mongodb://localhost:27017",
@@ -94,15 +88,10 @@ var defaultConfig = &config{
 	},
 }
 
-var legal = &struct {
-	documentStore []string
-}{
-	documentStore: []string{"mongo"},
-}
 
 // New creates a new config object
 func New() (*config, error) {
-	conf := new(config)
+	conf := defaultConfig
 
 	pwd, err := os.Getwd()
 	cobra.CheckErr(err)
@@ -120,85 +109,23 @@ func New() (*config, error) {
 		slog.Error(e.FAIL, "err", err, "description", "Couldn't parse config, using default config")
 		return defaultConfig, nil 
 	}
-
-	setDefaultValues(conf)
-
 	// Check for critical values and panic if missing
 	validateCriticalFields(conf)
 
 	return conf, nil
 }
-
-// setDefaultValues sets default values for non-critical parameters in the configuration
-func setDefaultValues(conf *config) {
-	//default values if not present
-	if conf.Munch.Server.Hostname == "" {
-		conf.Munch.Server.Hostname = defaultConfig.Munch.Server.Hostname
-		slog.Warn("Hostname missing, using default", "value", defaultConfig.Munch.Server.Hostname)
-	}
-
-	if conf.Munch.Server.Port == "" {
-		conf.Munch.Server.Port = defaultConfig.Munch.Server.Port
-		slog.Warn("Port missing, using default", "value", defaultConfig.Munch.Server.Port)
-	}
-
-	if conf.Munch.LogLevel == "" {
-		conf.Munch.LogLevel = defaultConfig.Munch.LogLevel
-		slog.Warn("LogLevel missing, using default", "value", defaultConfig.Munch.LogLevel)
-	}
-
-	if conf.DocumentStore == "" {
-		conf.DocumentStore = defaultConfig.DocumentStore
-		slog.Warn("DocumentStore missing, using default", "value", defaultConfig.DocumentStore)
-	}
-
-	//default values for Mongo configuration if missing
-	if conf.Mongo.URI == "" {
-		conf.Mongo.URI = defaultConfig.Mongo.URI
-		slog.Warn("Mongo URI missing, using default", "value", defaultConfig.Mongo.URI)
-	}
-
-	if conf.Mongo.DBName == "" {
-		conf.Mongo.DBName = defaultConfig.Mongo.DBName
-		slog.Warn("Mongo DBName missing, using default", "value", defaultConfig.Mongo.DBName)
-	}
-
-	if(conf.MeteoProviders[0].Name==""){
-		conf.MeteoProviders[0].Name=defaultConfig.MeteoProviders[0].Name
-	}
-	if(conf.MeteoProviders[0].APIPath==""){
-		if(conf.MeteoProviders[0].Name=="open-meteo"){
-			conf.MeteoProviders[0].APIPath=defaultConfig.MeteoProviders[0].APIPath
-		}else { 
-			validateCriticalFields(conf);
-		}
-	}
-	if(conf.MeteoProviders[0].BaseURI==""){
-		if(conf.MeteoProviders[0].Name=="open-meteo"){
-			conf.MeteoProviders[0].BaseURI=defaultConfig.MeteoProviders[0].BaseURI
-		}else{
-			validateCriticalFields(conf);
-		}
-	}
-	// Check for non-critical MeteoProviders and set defaults
-	if len(conf.MeteoProviders) == 0 {
-		slog.Warn("No MeteoProviders configured, using default config")
-		conf.MeteoProviders = defaultConfig.MeteoProviders
-	}
-}
-
 // validateCriticalFields checks for critical parameters in the configuration
 func validateCriticalFields(conf *config) {
 	for _, provider := range conf.MeteoProviders {
-		if provider.Name != "open-meteo" && provider.APIKey == "" {
+		if provider.Name == "meteoblue" && provider.APIKey == "" {
 			slog.Error(e.FAIL, "error", "Critical config value missing: APIKey for MeteoProvider", "provider", provider.Name)
 			panic("Critical config value is missing: API key for the provider")
 		}
-		if(provider.Name!="open-meteo" && provider.APIPath==""){
+		if(provider.Name=="meteoblue" && provider.APIPath==""){
 			slog.Error(e.FAIL,"error","Critical config value missing : API path for the meteoprovider","provider",provider.Name)
 			panic("Critical config value is missing: APi path for the provider")
 		}
-		if(provider.Name!="open-meteo" && provider.BaseURI==""){
+		if(provider.Name=="meteoblue" && provider.BaseURI==""){
 			slog.Error(e.FAIL,"error","Critical config vlaue is missing: BaseURI for the meteoprovider","provider",provider.Name)
 			panic("Critical config value is missing : BaseURI for the provider")
 		}
