@@ -7,6 +7,7 @@ import (
 
 	"github.com/tinkershack/meteomunch/config"
 	"github.com/tinkershack/meteomunch/http/rest"
+	"github.com/tinkershack/meteomunch/logger"
 	"github.com/tinkershack/meteomunch/plumber"
 )
 
@@ -38,19 +39,41 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 		return nil, errors.New("meteoblue provider configuration not found")
 	}
 
+	client := rest.NewClient().SetDefaults().SetBaseURL(meteoConfig.BaseURI)
+	if cfg.Munch.LogLevel == "debug" {
+		client.SetDebug()
+		client.EnableTrace()
+	}
+
 	return &MeteoBlueProvider{
-		client: rest.NewClient(),
+		client: client,
 		config: meteoConfig,
 	}, nil
 }
 
 func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, error) {
-	resp, err := p.client.SetQueryParams(map[string]string{
-		"lat": "11.25",
-		"lon": "77",
-	}).Get("https://my.meteoblue.com/v1/forecast")
+	// Creating a new request everytime we fecth data
+	p.client.NewRequest()
+	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
+	}
+
+	cfg, err := config.New()
+	if err != nil {
+		return nil, err
+	}
+
+	logger := logger.NewTag("providers:open-meteo")
+
+	if cfg.Munch.LogLevel == "debug" {
+		// Refraining from logger.Debug() as it doesn't pretty print the resty response stats and body
+		// And, this is just for debugging purposes so it's okay to use fmt.Println as it's not logged in production
+		logger.Debug("Response", "status:", resp.Status())
+		logger.Debug("Response", "body:", string(resp.Body()))
+
+		traceInfo := resp.TraceInfo()
+		logger.Debug("Response", "trace", fmt.Sprintf("%+v", traceInfo))
 	}
 
 	var data struct {
@@ -72,3 +95,5 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 
 	return baseData, nil
 }
+
+// Maybe add a MeteoBlueQueryParams like OpenMeteoQueryParams to have some standard for all providers?
