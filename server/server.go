@@ -53,8 +53,27 @@ func Serve(ctx context.Context, args []string) {
 	client.SetBaseURL(cfg.MeteoProviders[0].BaseURI)
 	client.NewRequest()
 
-	qs := "lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + cfg.MeteoProviders[0].APIKey
-	uri := fmt.Sprintf("packages/air-1h_air-day?%s", qs)
+	var uri string
+	var qs string
+	provider := cfg.MeteoProviders[0] 
+
+	switch provider.Name {
+	case "open-meteo":
+		// Set base URL and query string for open-meteo
+		client.SetBaseURL(provider.BaseURI)
+		qs = "latitude=47.558&longitude=7.573&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
+		uri = fmt.Sprintf("v1/forecast?%s", qs)
+
+	case "meteoblue":
+		// Set base URL and query string for meteoblue
+		client.SetBaseURL(provider.BaseURI)
+		qs = "lat=47.558&lon=7.573&asl=279&tz=Europe%2FZurich&name=Test&windspeed=kmh&format=json&history_days=1&forecast_days=0&apikey=" + provider.APIKey
+		uri = fmt.Sprintf("packages/air-1h_air-day?%s", qs)
+
+	default:
+		logger.Error(e.FAIL, "description", "Unsupported provider", "provider", provider.Name)
+		os.Exit(-1)
+	}
 
 	mux := http.NewServeMux()
 
