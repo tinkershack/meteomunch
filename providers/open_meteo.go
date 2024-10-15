@@ -20,7 +20,7 @@ type OpenMeteoProvider struct {
 
 // NewOpenMeteoProvider returns a new instance of OpenMeteoProvider
 func NewOpenMeteoProvider() (*OpenMeteoProvider, error) {
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (p *OpenMeteoProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 		return nil, err
 	}
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return nil, err
 	}

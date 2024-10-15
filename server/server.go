@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,12 +20,13 @@ func Serve(ctx context.Context, args []string) {
 	// The following are transient test routes for an early stage development convenience.
 	// These will be cleanedup in the future.
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
+	logger.Debug("Config fetched", "config", cfg, "err", err)
 	if err != nil {
-		logger.Error(e.FAIL, "err", err, "description", "Couldn't parse config")
-		os.Exit(-1)
+		logger.Error(e.FATAL, "err", err, "description", "config not well formed")
+		os.Exit(1)
 	}
-	logger.Info("Config parsed successfully", "config", cfg)
+	logger.Debug("Config parsed successfully", "config", cfg)
 
 	mux := http.NewServeMux()
 
@@ -47,10 +49,14 @@ func Serve(ctx context.Context, args []string) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
-		// fmt.Printf("Data: %+v\n", bd)
-		logger.Info("API Data fetched", "data", bd, "provider", "open-meteo")
+		if err := json.NewEncoder(w).Encode(bd); err != nil {
+			logger.Error(e.FAIL, "err", err, "description", "Couldn't encode response data to JSON")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		logger.Debug("API Data fetched", "data", bd, "provider", "open-meteo")
 	})
 
 	mux.HandleFunc("GET /meteo", func(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +87,7 @@ func Serve(ctx context.Context, args []string) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "OK")
 		// fmt.Printf("Data: %+v\n", bd)
-		logger.Info("API Data fetched", "data", bd, "provider", "meteo-blue")
+		logger.Debug("API Data fetched", "data", bd, "provider", "meteo-blue")
 	})
 
 	logger.Info("Ready, Plank? Serving Meteo Munch on " + cfg.Munch.Server.Hostname + ":" + cfg.Munch.Server.Port)
