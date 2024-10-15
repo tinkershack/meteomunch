@@ -19,7 +19,7 @@ type MeteoBlueProvider struct {
 }
 
 func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 		return nil, err
 	}
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return nil, err
 	}
