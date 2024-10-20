@@ -53,8 +53,10 @@ func NewOpenMeteoProvider() (*OpenMeteoProvider, error) {
 }
 
 // FetchData fetches API data from open-meteo provider for the given query parameters map
-func (p *OpenMeteoProvider) FetchData(qp map[string]string) (*plumber.BaseData, error) {
+func (p *OpenMeteoProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
 	p.client.NewRequest()
+	qp := p.SetQueryParams(coords)
+
 	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
@@ -86,9 +88,9 @@ func (p *OpenMeteoProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 	return data, nil
 }
 
-// OpenMeteoQueryParams forms the query parameters for OpenMeteo API based on given coordinates
-func OpenMeteoQueryParams(coords *plumber.Coordinates) map[string]string {
-	qp := map[string]string{
+// SetQueryParams forms the query parameters for OpenMeteo API based on given coordinates
+func (p *OpenMeteoProvider) SetQueryParams(coords *plumber.Coordinates) map[string]string {
+	return map[string]string{
 		"latitude":       fmt.Sprintf("%f", coords.Latitude),
 		"longitude":      fmt.Sprintf("%f", coords.Longitude),
 		"current":        "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m",
@@ -101,5 +103,4 @@ func OpenMeteoQueryParams(coords *plumber.Coordinates) map[string]string {
 		"cell_selection": "nearest",
 		"models":         "best_match",
 	}
-	return qp
 }

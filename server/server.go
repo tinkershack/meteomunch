@@ -43,7 +43,7 @@ func Serve(ctx context.Context, args []string) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		bd, err := p.FetchData(providers.OpenMeteoQueryParams(plumber.NewCoordinates(11.0056, 76.9661)))
+		bd, err := p.FetchData(plumber.NewCoordinates(10.9018379, 76.8998445))
 		if err != nil {
 			logger.Error(e.FAIL, "err", err, "description", "Couldn't fetch data from OpenMeteoProvider")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -66,19 +66,8 @@ func Serve(ctx context.Context, args []string) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		qp := map[string]string{
-			"lat":           "47.558",
-			"lon":           "7.587",
-			"asl":           "279",
-			"tz":            "Europe/Zurich",
-			"name":          "Test",
-			"windspeed":     "kmh",
-			"format":        "json",
-			"history_days":  "1",
-			"forecast_days": "0",
-			"apikey":        cfg.MeteoProviders[0].APIKey,
-		}
-		bd, err := p.FetchData(qp)
+		// TO-DO : After defining the MB response, write it to the response
+		bd, err := p.FetchData(plumber.NewCoordinates(10.9018379, 76.8998445))
 		if err != nil {
 			logger.Error(e.FAIL, "err", err, "description", "Couldn't fetch data from MeteoBlueProvider")
 			w.WriteHeader(http.StatusInternalServerError)

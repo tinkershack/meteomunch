@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/tinkershack/meteomunch/config"
+	e "github.com/tinkershack/meteomunch/errors"
 	"github.com/tinkershack/meteomunch/http/rest"
 	"github.com/tinkershack/meteomunch/logger"
 	"github.com/tinkershack/meteomunch/plumber"
@@ -51,9 +54,13 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 	}, nil
 }
 
-func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, error) {
+func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
 	// Creating a new request everytime we fecth data
 	p.client.NewRequest()
+	// Getting the query parameters
+	qp := p.SetQueryParams(coords)
+
+	// Setting the paramters on the request and making the request
 	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
@@ -86,6 +93,7 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
+	// TO-DO: #12
 	// Map the JSON response to plumber.BaseData
 	baseData := &plumber.BaseData{
 		Latitude:  data.Latitude,
@@ -96,4 +104,21 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 	return baseData, nil
 }
 
-// Maybe add a MeteoBlueQueryParams like OpenMeteoQueryParams to have some standard for all providers?
+// Set the QueryParams for the request
+func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) map[string]string {
+	// Get the config to accesss the API Key
+	cfg, err := config.Get()
+	if err != nil {
+		slog.Error("Couldn't parse config", "error", err, "description", e.FAIL)
+		os.Exit(-1)
+	}
+	return map[string]string{
+		"lat":           fmt.Sprintf("%f", coords.Latitude),
+		"lon":           fmt.Sprintf("%f", coords.Longitude),
+		"tz":            "GMT",
+		"format":        "json",
+		"forecast_days": "1",
+		"apikey":        cfg.MeteoProviders[0].APIKey,
+	}
+
+}
