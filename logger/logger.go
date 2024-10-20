@@ -18,7 +18,7 @@ func NewTag(tag string) *slog.Logger {
 
 // New returns a new generic instance of a logger that implements Logger interface
 func New() *slog.Logger {
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		slog.Error(e.FAIL, "err", err, "description", "Couldn't parse config")
 	}
