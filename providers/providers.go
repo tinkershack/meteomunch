@@ -28,6 +28,7 @@ package providers
 import (
 	"fmt"
 
+	"github.com/tinkershack/meteomunch/config"
 	"github.com/tinkershack/meteomunch/logger"
 	"github.com/tinkershack/meteomunch/plumber"
 )
@@ -45,16 +46,16 @@ type Provider interface {
 }
 
 // NewProvider returns the appropriate provider based on the name
-func NewProvider(name string) (Provider, error) {
+func NewProvider(name string, cfg *config.Config) (Provider, error) {
 	switch name {
 	case "open-meteo":
-		p, err := NewOpenMeteoProvider()
+		p, err := NewOpenMeteoProvider(cfg)
 		if err != nil {
 			return nil, err
 		}
 		return p, nil
 	case "meteoblue":
-		p, err := NewMeteoBlueProvider()
+		p, err := NewMeteoBlueProvider(cfg)
 		if err != nil {
 			return nil, err
 		}
