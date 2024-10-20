@@ -45,17 +45,17 @@ type Provider interface {
 	SetQueryParams(coords *plumber.Coordinates)
 }
 
-// NewProvider returns the appropriate provider based on the name
-func NewProvider(name string, cfg *config.Config) (Provider, error) {
+// New returns the appropriate provider based on the name
+func New(name string, cfg *config.Config) (Provider, error) {
 	switch name {
 	case "open-meteo":
-		p, err := NewOpenMeteoProvider(cfg)
+		p, err := newOpenMeteo(cfg)
 		if err != nil {
 			return nil, err
 		}
 		return p, nil
 	case "meteoblue":
-		p, err := NewMeteoBlueProvider(cfg)
+		p, err := newMeteoBlue(cfg)
 		if err != nil {
 			return nil, err
 		}

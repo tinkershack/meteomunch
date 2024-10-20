@@ -37,7 +37,8 @@ func Serve(ctx context.Context, args []string) {
 	})
 
 	mux.HandleFunc("GET /open-meteo", func(w http.ResponseWriter, r *http.Request) {
-		p, err := providers.NewOpenMeteoProvider(cfg)
+		// p, err := providers.NewOpenMeteoProvider(cfg)
+		p, err := providers.New("open-meteo", cfg)
 		if err != nil {
 			logger.Error(e.FAIL, "err", err, "description", "Couldn't create OpenMeteoProvider")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -60,7 +61,8 @@ func Serve(ctx context.Context, args []string) {
 	})
 
 	mux.HandleFunc("GET /meteo", func(w http.ResponseWriter, r *http.Request) {
-		p, err := providers.NewMeteoBlueProvider(cfg)
+		// p, err := providers.NewMeteoBlueProvider(cfg)
+		p, err := providers.New("meteoblue", cfg)
 		if err != nil {
 			logger.Error(e.FAIL, "err", err, "description", "Couldn't create MeteoBlueProvider")
 			w.WriteHeader(http.StatusInternalServerError)
