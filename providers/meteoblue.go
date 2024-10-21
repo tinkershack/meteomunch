@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
-	"os"
 
 	"github.com/tinkershack/meteomunch/config"
-	e "github.com/tinkershack/meteomunch/errors"
 	"github.com/tinkershack/meteomunch/http/rest"
 	"github.com/tinkershack/meteomunch/logger"
 	"github.com/tinkershack/meteomunch/plumber"
@@ -17,8 +14,9 @@ import (
 const meteoBlueProviderName = "meteoblue"
 
 type MeteoBlueProvider struct {
-	client rest.HTTPClient
-	config config.MeteoProvider
+	client      rest.HTTPClient
+	config      config.MeteoProvider
+	queryParams map[string]string
 }
 
 func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
@@ -48,20 +46,26 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 		client.EnableTrace()
 	}
 
-	return &MeteoBlueProvider{
+	provider := MeteoBlueProvider{
 		client: client,
 		config: meteoConfig,
-	}, nil
+	}
+	// Setting the default location to 0,0
+	provider.SetQueryParams(plumber.NewCoordinates(0, 0))
+
+	// Creating the new request(which will be reused in all FetchData calls) and setting the default queryParams on the client
+	provider.client.NewRequest()
+	provider.client.SetQueryParams(provider.queryParams)
+	return &provider, nil
 }
 
 func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
-	// Creating a new request everytime we fecth data
-	p.client.NewRequest()
-	// Getting the query parameters
-	qp := p.SetQueryParams(coords)
-
-	// Setting the paramters on the request and making the request
-	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
+	resp, err := p.client.
+		SetQueryParams(map[string]string{
+			"latitude":  fmt.Sprintf("%f", coords.Latitude),
+			"longitude": fmt.Sprintf("%f", coords.Longitude),
+		}).
+		Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -105,20 +109,15 @@ func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.Bas
 }
 
 // Set the QueryParams for the request
-func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) map[string]string {
-	// Get the config to accesss the API Key
-	cfg, err := config.Get()
-	if err != nil {
-		slog.Error("Couldn't parse config", "error", err, "description", e.FAIL)
-		os.Exit(-1)
-	}
-	return map[string]string{
+func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) {
+	// Setting the queryParams on the provider
+	p.queryParams = map[string]string{
 		"lat":           fmt.Sprintf("%f", coords.Latitude),
 		"lon":           fmt.Sprintf("%f", coords.Longitude),
 		"tz":            "GMT",
 		"format":        "json",
 		"forecast_days": "1",
-		"apikey":        cfg.MeteoProviders[0].APIKey,
+		"apikey":        p.config.APIKey,
 	}
 
 }

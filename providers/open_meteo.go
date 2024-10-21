@@ -14,8 +14,9 @@ import (
 const openMeteoProviderName = "open-meteo"
 
 type OpenMeteoProvider struct {
-	client rest.HTTPClient
-	config config.MeteoProvider
+	client      rest.HTTPClient
+	config      config.MeteoProvider
+	queryParams map[string]string
 }
 
 // NewOpenMeteoProvider returns a new instance of OpenMeteoProvider
@@ -46,18 +47,27 @@ func NewOpenMeteoProvider() (*OpenMeteoProvider, error) {
 		client.EnableTrace()
 	}
 
-	return &OpenMeteoProvider{
+	provider := OpenMeteoProvider{
 		client: client,
 		config: meteoConfig,
-	}, nil
+	}
+	// Setting the default location to 0,0
+	provider.SetQueryParams(plumber.NewCoordinates(0, 0))
+	// Creating the new request(which will be reused in all FetchData calls) and setting the default queryParams on the client
+	provider.client.NewRequest()
+	provider.client.SetQueryParams(provider.queryParams)
+	return &provider, nil
 }
 
 // FetchData fetches API data from open-meteo provider for the given query parameters map
 func (p *OpenMeteoProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
-	p.client.NewRequest()
-	qp := p.SetQueryParams(coords)
+	resp, err := p.client.
+		SetQueryParams(map[string]string{
+			"latitude":  fmt.Sprintf("%f", coords.Latitude),
+			"longitude": fmt.Sprintf("%f", coords.Longitude),
+		}).
+		Get(p.config.APIPath)
 
-	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +99,8 @@ func (p *OpenMeteoProvider) FetchData(coords *plumber.Coordinates) (*plumber.Bas
 }
 
 // SetQueryParams forms the query parameters for OpenMeteo API based on given coordinates
-func (p *OpenMeteoProvider) SetQueryParams(coords *plumber.Coordinates) map[string]string {
-	return map[string]string{
+func (p *OpenMeteoProvider) SetQueryParams(coords *plumber.Coordinates) {
+	p.queryParams = map[string]string{
 		"latitude":       fmt.Sprintf("%f", coords.Latitude),
 		"longitude":      fmt.Sprintf("%f", coords.Longitude),
 		"current":        "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m",

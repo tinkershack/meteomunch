@@ -41,7 +41,7 @@ func init() {
 // Provider interface defines the methods that each provider must implement
 type Provider interface {
 	FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error)
-	SetQueryParams(coords *plumber.Coordinates) map[string]string
+	SetQueryParams(coords *plumber.Coordinates)
 }
 
 // NewProvider returns the appropriate provider based on the name
