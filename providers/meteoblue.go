@@ -62,8 +62,8 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
 	resp, err := p.client.
 		SetQueryParams(map[string]string{
-			"latitude":  fmt.Sprintf("%f", coords.Latitude),
-			"longitude": fmt.Sprintf("%f", coords.Longitude),
+			"lat": fmt.Sprintf("%f", coords.Latitude),
+			"lon": fmt.Sprintf("%f", coords.Longitude),
 		}).
 		Get(p.config.APIPath)
 	if err != nil {
@@ -112,8 +112,6 @@ func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.Bas
 func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) {
 	// Setting the queryParams on the provider
 	p.queryParams = map[string]string{
-		"lat":           fmt.Sprintf("%f", coords.Latitude),
-		"lon":           fmt.Sprintf("%f", coords.Longitude),
 		"tz":            "GMT",
 		"format":        "json",
 		"forecast_days": "1",
