@@ -14,8 +14,9 @@ import (
 const meteoBlueProviderName = "meteoblue"
 
 type MeteoBlueProvider struct {
-	client rest.HTTPClient
-	config config.MeteoProvider
+	client      rest.HTTPClient
+	config      config.MeteoProvider
+	queryParams map[string]string
 }
 
 func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
@@ -45,16 +46,26 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 		client.EnableTrace()
 	}
 
-	return &MeteoBlueProvider{
+	provider := MeteoBlueProvider{
 		client: client,
 		config: meteoConfig,
-	}, nil
+	}
+	// Setting the default location to 0,0
+	provider.SetQueryParams(plumber.NewCoordinates(0, 0))
+
+	// Creating the new request(which will be reused in all FetchData calls) and setting the default queryParams on the client
+	provider.client.NewRequest()
+	provider.client.SetQueryParams(provider.queryParams)
+	return &provider, nil
 }
 
-func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, error) {
-	// Creating a new request everytime we fecth data
-	p.client.NewRequest()
-	resp, err := p.client.SetQueryParams(qp).Get(p.config.APIPath)
+func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
+	resp, err := p.client.
+		SetQueryParams(map[string]string{
+			"lat": fmt.Sprintf("%f", coords.Latitude),
+			"lon": fmt.Sprintf("%f", coords.Longitude),
+		}).
+		Get(p.config.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +97,7 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
+	// TO-DO: #12
 	// Map the JSON response to plumber.BaseData
 	baseData := &plumber.BaseData{
 		Latitude:  data.Latitude,
@@ -96,4 +108,14 @@ func (p *MeteoBlueProvider) FetchData(qp map[string]string) (*plumber.BaseData, 
 	return baseData, nil
 }
 
-// Maybe add a MeteoBlueQueryParams like OpenMeteoQueryParams to have some standard for all providers?
+// Set the QueryParams for the request
+func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) {
+	// Setting the queryParams on the provider
+	p.queryParams = map[string]string{
+		"tz":            "GMT",
+		"format":        "json",
+		"forecast_days": "1",
+		"apikey":        p.config.APIKey,
+	}
+
+}
