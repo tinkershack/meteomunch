@@ -117,7 +117,7 @@ func NewDefaultConfig() *Config {
 // Get returns the current configuration that was last loaded, or loads the configuration if it hasn't been loaded yet
 func Get() (*Config, error) {
 	if currentConfig == nil {
-		currentConfig, currentConfigErrors = Load(nil)
+		currentConfig, currentConfigErrors = Load(nil, "")
 		// return cfg, err
 	}
 	return currentConfig, currentConfigErrors
@@ -126,7 +126,7 @@ func Get() (*Config, error) {
 // Load loads the configuration from the file if a preferred config is not provided
 //
 // This is useful when Munch is being used as a package and the user wants to dynamically pass their own configuration
-func Load(c *Config) (*Config, error) {
+func Load(c *Config, configPath string) (*Config, error) {
 	currentConfig = NewDefaultConfig() // Assign it to config.currentConfig
 
 	// Use the provided config if it's not nil
@@ -142,9 +142,13 @@ func Load(c *Config) (*Config, error) {
 		viper.AddConfigPath(".")
 		viper.SetConfigType("yml")
 		viper.SetConfigName("munch")
+		if configPath != "" {
+			viper.SetConfigFile(configPath)
+		}
 
+		slog.Info("Reading config file", "path", viper.ConfigFileUsed())
 		if err := viper.ReadInConfig(); err != nil {
-			slog.Warn("Config file not found, using default config", "error", err)
+			slog.Error("Config file not found, using default config", "error", err)
 			return currentConfig, nil
 		}
 
