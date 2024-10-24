@@ -24,26 +24,26 @@ func init() {
 	slog.SetDefault(logger)
 }
 
-type config struct {
+type Config struct {
 	Munch          Munch     // Parameters of munch app, excluding external dependencies
 	Mongo          DataStore // Gets picked if DocumentStore is "mongo"
 	DLMRedis       DataStore
 	MeteoProviders []MeteoProvider
 }
 
-func (c *config) GetMunch() Munch {
+func (c *Config) GetMunch() Munch {
 	return c.Munch
 }
 
-func (c *config) GetMongo() DataStore {
+func (c *Config) GetMongo() DataStore {
 	return c.Mongo
 }
 
-func (c *config) GetDLMRedis() DataStore {
+func (c *Config) GetDLMRedis() DataStore {
 	return c.DLMRedis
 }
 
-func (c *config) GetMeteoProviders() []MeteoProvider {
+func (c *Config) GetMeteoProviders() []MeteoProvider {
 	return c.MeteoProviders
 }
 
@@ -72,10 +72,10 @@ type DataStore struct {
 	DBNumber int
 }
 
-var currentConfig *config
+var currentConfig *Config
 var currentConfigErrors error
 
-var defaultConfig = &config{
+var defaultConfig = &Config{
 	Munch: Munch{
 		Server: MunchServer{
 			Hostname: "localhost",
@@ -107,7 +107,7 @@ var defaultConfig = &config{
 // NewDefaultConfig returns a deep copy of the default configuration
 //
 // By doing this, we ensure that newConfig has its own independent copy of the MeteoProviders slice. Therefore, any changes made to newConfig will not affect defaultConfig.
-func NewDefaultConfig() *config {
+func NewDefaultConfig() *Config {
 	newConfig := *defaultConfig
 	newConfig.MeteoProviders = make([]MeteoProvider, len(defaultConfig.MeteoProviders))
 	copy(newConfig.MeteoProviders, defaultConfig.MeteoProviders)
@@ -115,7 +115,7 @@ func NewDefaultConfig() *config {
 }
 
 // Get returns the current configuration that was last loaded, or loads the configuration if it hasn't been loaded yet
-func Get() (*config, error) {
+func Get() (*Config, error) {
 	if currentConfig == nil {
 		currentConfig, currentConfigErrors = Load(nil)
 		// return cfg, err
@@ -126,7 +126,7 @@ func Get() (*config, error) {
 // Load loads the configuration from the file if a preferred config is not provided
 //
 // This is useful when Munch is being used as a package and the user wants to dynamically pass their own configuration
-func Load(c *config) (*config, error) {
+func Load(c *Config) (*Config, error) {
 	currentConfig = NewDefaultConfig() // Assign it to config.currentConfig
 
 	// Use the provided config if it's not nil
@@ -190,7 +190,7 @@ func (e *CriticalErrors) Error() string {
 }
 
 // validateCriticalFields checks for critical parameters in the configuration
-func validateCriticalFields(conf *config, isPanic bool) error {
+func validateCriticalFields(conf *Config, isPanic bool) error {
 	var ve []error // Validation errors
 
 	for _, provider := range conf.MeteoProviders {

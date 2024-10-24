@@ -28,6 +28,7 @@ package providers
 import (
 	"fmt"
 
+	"github.com/tinkershack/meteomunch/config"
 	"github.com/tinkershack/meteomunch/logger"
 	"github.com/tinkershack/meteomunch/plumber"
 )
@@ -44,17 +45,17 @@ type Provider interface {
 	SetQueryParams(coords *plumber.Coordinates)
 }
 
-// NewProvider returns the appropriate provider based on the name
-func NewProvider(name string) (Provider, error) {
+// New returns the appropriate provider based on the name
+func New(name string, cfg *config.Config) (Provider, error) {
 	switch name {
 	case "open-meteo":
-		p, err := NewOpenMeteoProvider()
+		p, err := newOpenMeteo(cfg)
 		if err != nil {
 			return nil, err
 		}
 		return p, nil
 	case "meteoblue":
-		p, err := NewMeteoBlueProvider()
+		p, err := newMeteoBlue(cfg)
 		if err != nil {
 			return nil, err
 		}

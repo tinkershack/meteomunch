@@ -13,19 +13,20 @@ import (
 
 const meteoBlueProviderName = "meteoblue"
 
-type MeteoBlueProvider struct {
+type MeteoBlue struct {
 	client      rest.HTTPClient
 	config      config.MeteoProvider
 	queryParams map[string]string
+	logLevel    string
 }
 
-func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, err
+func newMeteoBlue(cfg *config.Config) (*MeteoBlue, error) {
+	if cfg == nil {
+		return nil, errors.New("configuration cannot be nil")
 	}
 
 	var meteoConfig config.MeteoProvider
+	logLevel := cfg.Munch.LogLevel
 	found := false
 
 	for _, provider := range cfg.MeteoProviders {
@@ -46,9 +47,10 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 		client.EnableTrace()
 	}
 
-	provider := MeteoBlueProvider{
-		client: client,
-		config: meteoConfig,
+	provider := MeteoBlue{
+		client:   client,
+		config:   meteoConfig,
+		logLevel: logLevel,
 	}
 	// Setting the default location to 0,0
 	provider.SetQueryParams(plumber.NewCoordinates(0, 0))
@@ -59,7 +61,7 @@ func NewMeteoBlueProvider() (*MeteoBlueProvider, error) {
 	return &provider, nil
 }
 
-func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
+func (p *MeteoBlue) FetchData(coords *plumber.Coordinates) (*plumber.BaseData, error) {
 	resp, err := p.client.
 		SetQueryParams(map[string]string{
 			"lat": fmt.Sprintf("%f", coords.Latitude),
@@ -70,14 +72,9 @@ func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.Bas
 		return nil, err
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, err
-	}
-
 	logger := logger.NewTag("providers:open-meteo")
 
-	if cfg.Munch.LogLevel == "debug" {
+	if p.logLevel == "debug" {
 		// Refraining from logger.Debug() as it doesn't pretty print the resty response stats and body
 		// And, this is just for debugging purposes so it's okay to use fmt.Println as it's not logged in production
 		logger.Debug("Response", "status:", resp.Status())
@@ -109,7 +106,7 @@ func (p *MeteoBlueProvider) FetchData(coords *plumber.Coordinates) (*plumber.Bas
 }
 
 // Set the QueryParams for the request
-func (p *MeteoBlueProvider) SetQueryParams(coords *plumber.Coordinates) {
+func (p *MeteoBlue) SetQueryParams(coords *plumber.Coordinates) {
 	// Setting the queryParams on the provider
 	p.queryParams = map[string]string{
 		"tz":            "GMT",
